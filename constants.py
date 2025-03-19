@@ -1,12 +1,13 @@
 MIRAI_SCAN_BIN = "mirai-scan.mpsl"
 # means 10.10.10.6
 # so the host we manually inject mirai
-COMPROMISED_HOST = 6
-# means 10.10.10.23
-VICTIM_HOST = 23
+COMPROMISED_HOST = "10.10.10.6"
 
 USERNAME = "admin"       
-PASSWORD = "smcadmin"    
+PASSWORD = "smcadmin"  
+
+VICTIM_HOST = "10.10.10.23"
+
 KILL_CMD = "kill -9 {}"
 
 CNC_USERNAME = "admin"

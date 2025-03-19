@@ -134,8 +134,8 @@ def is_telnet_already_enabled(host):
     
 
 
-def enable_telnet(host_last_value):
-    url = f"http://10.10.10.{host_last_value}/setSystemCommand"
+def enable_telnet(host_ip):
+    url = f"http://{host_ip}/setSystemCommand"
 
 
     data = {
@@ -154,8 +154,8 @@ def enable_telnet(host_last_value):
 
     return response.status_code
 
-def upload_file_to_dlink_cam(host_last_value, file_path):
-    url = f"http://10.10.10.{host_last_value}/setFileUpload"
+def upload_file_to_dlink_cam(host_ip, file_path):
+    url = f"http://{host_ip}/setFileUpload"
 
 
     data = {

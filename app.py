@@ -199,14 +199,6 @@ async def background_tasks():
     for endpoint in clients_by_endpoint:
         asyncio.create_task(process_output_queue(endpoint))
 
-
-    global telnet_session_started
-
-    start_telnet_session()
-    telnet_session_started = True
-    sleep(12) 
-
-
 async def process_output_queue(endpoint):
     """
     Continuously processes the output queue for a specific endpoint.
