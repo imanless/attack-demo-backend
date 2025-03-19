@@ -1,6 +1,6 @@
 from telnet_service import *
 from constants import (VICTIM_HOST,COMPROMISED_HOST)
-
+import app
 async def reset_demo_service():
     
     print("[reset_demo] Resetting the demo")
@@ -26,6 +26,8 @@ async def reset_demo_service():
 
     time.sleep(1)
 
+    kill_process_by_pattern("telnet localhost 23")
+    app.telnet_session_started = False
 
     return resp_1, resp_2
 

