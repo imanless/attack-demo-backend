@@ -132,8 +132,74 @@ async def start_inject(username: str = Query(...), password: str = Query(...), i
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error initiating Injection: {str(e)}")
+    
+from scapy.all import sniff, TCP
 
+SRC1 = "10.10.10.6"
+SRC2 = "10.10.10.23"
+DST = "10.10.10.169"
+PROTOCOL = "tcp"  # Kann auch "udp" oder "icmp" sein
+INTERFACE = "enp3s0"
+TCP_FLAG = "S"  # Optional: "S" für SYN, "SA" für SYN-ACK
 
+# TCP-Flag Mapping
+TCP_FLAG_MAP = {
+    "S": 0x02,   # SYN
+    "SA": 0x12,  # SYN-ACK
+    "A": 0x10,   # ACK
+    "F": 0x01,   # FIN
+    "R": 0x04    # RST
+}
+
+# Paket-Zähler
+packet_count = 0
+lock = threading.Lock()
+sniffing_active = False  # Variable zur Steuerung des Sniffing-Starts
+
+def packet_callback(packet):
+    """Callback-Funktion, die aufgerufen wird, wenn ein passendes Paket erkannt wird"""
+    global packet_count
+
+    # Protokollprüfung
+    if PROTOCOL == "tcp" and not packet.haslayer(TCP):
+        return
+    if PROTOCOL == "udp" and not packet.haslayer("UDP"):
+        return
+    if PROTOCOL == "icmp" and not packet.haslayer("ICMP"):
+        return
+
+    # Prüfen, ob das Paket von einer der Quell-IPs zum Ziel-Host geht
+    if packet.haslayer("IP") and packet["IP"].src in [SRC1, SRC2] and packet["IP"].dst == DST:
+        # Falls TCP-Flag angegeben wurde, prüfen
+        if PROTOCOL == "tcp" and TCP_FLAG:
+            if packet.haslayer(TCP) and packet[TCP].flags != TCP_FLAG_MAP.get(TCP_FLAG, None):
+                return  # Falls das Flag nicht passt, ignorieren
+
+        with lock:
+            packet_count += 1
+
+def start_sniffing():
+    """Startet das Sniffing, wenn es noch nicht läuft"""
+    global sniffing_active
+    if not sniffing_active:
+        sniffing_active = True
+        bpf_filter = f"{PROTOCOL} and (src {SRC1} or src {SRC2}) and dst {DST}"
+        print(f"Starte Paketüberwachung auf {INTERFACE} für {PROTOCOL.upper()} von {SRC1}, {SRC2} zu {DST}...")
+        sniff(iface=INTERFACE, filter=bpf_filter, prn=packet_callback, store=0)
+
+@app.websocket("/ws/packet_count")
+async def count_packets(websocket: WebSocket):
+    """WebSocket-Verbindung zur Live-Übertragung der Paketanzahl"""
+    await websocket.accept()
+
+    # Sniffing erst starten, wenn der erste Client verbindet
+    sniffing_thread = threading.Thread(target=start_sniffing, daemon=True)
+    sniffing_thread.start()
+
+    while True:
+        await asyncio.sleep(1)  # Update jede Sekunde
+        with lock:
+            await websocket.send_json({"packet_count": packet_count})
 
 @app.websocket("/ws/{endpoint}")
 async def start_scanning(websocket: WebSocket, endpoint: str):
@@ -325,6 +391,7 @@ async def get():
                 }
 
                 function connectToDdos() {
+                    let ws;
                     const type = prompt("Enter attack type (e.g., SYN flood):", "syn");
                     const duration = prompt("Enter duration (in seconds):", "20");
                     const target = prompt("Enter target IP address (e.g., 10.10.10.20):", "10.10.10.174");
@@ -337,6 +404,12 @@ async def get():
                         .then(data => {
                             console.log("DDoS attack started:", data);
                             alert(data.message);  // Show the confirmation message to the user
+
+                            ws = new WebSocket(`ws://localhost:8000/ws/packet_count`);
+                            ws.onmessage = function(event) {
+                                console.log("Packet Count Update:", event.data);
+                            };
+
                         })
                         .catch(error => {
                             console.error("Error starting DDoS attack:", error);
