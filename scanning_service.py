@@ -60,14 +60,6 @@ def start_scanning_service(endpoint):
             tn.write(b"./mirai-scan.mpsl\n")
 
 
-            patterns = [
-                r"Attempting to brute found IP (\d{1,3}(?:\.\d{1,3}){3})",  # Extract IP from brute attempt
-                #r"Found verified working telnet",                         # Match working telnet
-                #r"Send scan result to loader",                            # Match scan result
-                r"\[scanner\] (FD\d+) connected\. Trying (.*?)\r",        # Match connection attempts
-                r"\[scanner\] (FD\d+) Attempting to brute found IP (.*)"   # Match successful brute force results
-            ]
-
             buffer = ""
             scanners = {}
 
@@ -85,6 +77,7 @@ def start_scanning_service(endpoint):
                     # Normalize newlines
                     buffer = buffer.replace('\r\n', ' ').replace('\n', ' ')
 
+                    buffer = re.sub(r'(?<!\n)(?=\[scanner\]|\[resolv\]|\[killer\]|\[main\]|\[report\])', '\n', buffer)
                     # Process matches from the buffer
                     while True:
                         match = scanner_pattern.search(buffer)
@@ -109,7 +102,7 @@ def start_scanning_service(endpoint):
                         connect_match = connect_pattern.search(full_message)
                         if connect_match:
                             fd, creds = connect_match.groups()
-                            if fd in scanners and scanners[fd]["creds"] is None:
+                            if fd in scanners:
                                 scanners[fd]["creds"] = creds
                                 msg = f"Trying to login with creds: {creds}"
                                 if not send:
@@ -141,6 +134,8 @@ def start_scanning_service(endpoint):
                                     output_queues[endpoint].put(msg)
                                     send = True
                                 #return
+
+                buffer = ""
 
                 if tn.eof:
                     print(f"Telnet session for {endpoint} closed.")
