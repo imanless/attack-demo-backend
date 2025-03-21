@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+gnome-terminal -- bash -c "sshpass -p '1234' ssh root@10.10.10.1 'daemonlogger -i phy1-ap0 -o lan2'; exec bash"
+
 # Start Apache2
 echo "Starting Apache2 service..."
 sudo service apache2 start || { echo "Apache2 service failed to start"; exit 1; }
