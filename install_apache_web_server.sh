@@ -8,14 +8,14 @@ else
 fi
 
 
-sudo apt-get install apache2 -y
-service apache2 start
 
-cd /ReadMine-Mirai-Demo-Files/release
-
+cd ReadMine-Mirai-Demo-Files/release
+mkdir /var/www/html/bins
 cp mirai.* /var/www/html/bins
 cp bins.sh /var/www/html/bins
 rm /var/www/html/index.html
+
+sudo service apache2 start
 
 echo "Done"
 
