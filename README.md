@@ -1,33 +1,57 @@
 # Attack Demo Backend
 
-This setup assumes that the Apache web server is installed and there is a directory on the server (localhost/bins) where a `bins.sh` script and Mirai binaries for different CPU architectures are uploaded. It is also important that the permissions of these files are set in such a way that they can be downloaded.
+## Overview
+This project provides a backend for an attack demonstration. It includes scripts to set up the necessary infrastructure, such as an Apache web server serving binaries and a CNC (Command and Control) server.
 
-Make sure the cameras are powered on.
+## Setup Instructions
 
-### Enable Port Mirroring on Router (Works for Touris Omnia Router, see also: [DIoT Technical Documentation](https://gitlab.trust.informatik.tu-darmstadt.de:10296/diot/diot-technical-documentation/-/blob/main/Docu-Port-Mirroring.txt?ref_type=heads))
+### 1. Initial Setup on a Fresh System
+If you are starting on a freshly installed system, follow these steps to prepare the environment:
 
-1. SSH into the router:
+1. **Set up the Mirai database:**
    ```bash
-   ssh root@10.10.10.1
-2. Enable promiscuous mode on the phy1-ap0 interface:
+   ./cnc_db_setup.sh
+   ```
+
+2. **Install and configure the Apache web server with Mirai binaries:**
    ```bash
-   ip link set phy1-ap0 promisc on
-3. Start the daemonlogger to log traffic from phy1-ap0 to lan0: 
+   ./install_apache_web_server.sh
+   ```
+
+3. **Start the necessary services:**
    ```bash
-   daemonlogger -i phy1-ap0 -o lan0
-4. Connect the Ethernet cable from lan0 on the router to your machine's Ethernet port.
+   ./start-demo-services.sh
+   ```
 
-
-### Run the Demo
-
-Execute the following script to start the necessary services:
+### 2. Running the Backend on an Already Configured System
+If the system has already been set up, you only need to start the demo services:
 
 ```bash
 ./start-demo-services.sh
 ```
 
-## Verify the Setup
+### Important Notes
+- After starting the demo services, wait until the CNC server successfully logs in before interacting with the system. Do not switch windows or terminals during this process.
+- The backend can be tested locally without a frontend by visiting: [http://localhost:8000/](http://localhost:8000/).
 
-- Visit [http://localhost:8000/](http://localhost:8000/) to make sure the attack demo backend is running.
-- Visit [http://localhost:80/bins](http://localhost:80/bins) to verify that the Apache web server is accessible and serving the `bins.sh` script and Mirai binaries.
+## Verify the Setup
+- Visit [http://localhost:8000/](http://localhost:8000/) to ensure the attack demo backend is running.
+- Visit [http://localhost:80/bins](http://localhost:80/bins) to check if the Apache web server is serving the `bins.sh` script and Mirai binaries.
+
+## Configuration Details
+- The `constants.py` file contains static variables such as:
+  - **Camera IPs**
+  - **Router username and password** (used to start `daemonlogger`)
+  - **CNC server credentials**
+  - **Binary name** (used to upload to the first camera)
+  - **Network interface** (important for packet logging to function correctly)
+
+## Notes
+- I haven't dealt with providing a full `requirements.txt` file.
+- It is assumed that the host running the backend is part of a network using the `10.10.10.x` subnet.
+- The host should have the static IP `10.10.10.5`.
+- The hostnames `cnc.mirai.local` and `report.mirai.local` should be assigned accordingly.
+
+---
+
 
