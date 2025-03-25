@@ -1,8 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 import asyncio
-import telnetlib
-import subprocess
 import queue
 import threading
 from fastapi import FastAPI, HTTPException, Query
@@ -93,35 +91,6 @@ PROTOCOL_MAPPING = {
     "rst": "TCP"
 }
 
-
-@app.get("/ddos")
-async def start_ddos_attack(attack_type: str = Query(...), duration: int = Query(...), target: str = Query(...)):
-    """
-    This endpoint handles DDoS attack requests.
-    Expects three parameters: type, duration, and target.
-    """
-    try:
-        # # Validate parameters
-        # if type not in ["SYN flood", "UDP flood", "TCP flood"]:
-        #     raise HTTPException(status_code=400, detail="Invalid attack type specified.")
-        
-        if duration <= 0:
-            raise HTTPException(status_code=400, detail="Duration must be a positive integer.")
-        
-        protocol = PROTOCOL_MAPPING.get(attack_type.lower(), "UNKNOWN")  # Standardwert "UNKNOWN", falls nicht gefunden
-        print(f"Mapped attack type to protocol {protocol}")
-        global current_ddos_params 
-        current_ddos_params = {"protocol": protocol, "duration": duration, "target": target}
-
-        attack_message = threading.Thread(target=ddos_attack_service, args=(attack_type, duration, target))
-        attack_message.start()        
-        return JSONResponse(content={"message": f"Started DDoS attack of type {attack_type} on {target} for {duration} seconds."}, status_code=200)
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error initiating DDoS attack: {str(e)}")
-
-
-
 @app.get("/inject")
 async def start_inject(username: str = Query(...), password: str = Query(...), ip: str = Query(...)):
     """
@@ -148,13 +117,17 @@ async def start_inject(username: str = Query(...), password: str = Query(...), i
         raise HTTPException(status_code=500, detail=f"Error initiating Injection: {str(e)}")
     
 
-from packet_counter_service import get_packet_count,start_sniffing
+from packet_counter_service import get_packet_count,start_sniffing,reset_packet_count,get_packets
+import time
+from ddos_service import start_event
 
 @app.websocket("/ws/packet_count")
 async def count_packets(websocket: WebSocket):
     """WebSocket-Verbindung zur Live-Übertragung der Paketanzahl"""
     await websocket.accept()
-
+    
+    reset_packet_count()
+    start_event.clear()
     # Warte auf gültige DDoS-Parameter
     max_wait_time = 10  # Maximal 10 Sekunden warten
     wait_interval = 0.5  # Alle 500ms prüfen
@@ -178,10 +151,62 @@ async def count_packets(websocket: WebSocket):
     sniffing_thread = threading.Thread(target=start_sniffing, args=(protocol, target_ip, tcp_flag), daemon=True)
     sniffing_thread.start()
 
+    print("Waiting for Event")
+
+    await start_event.wait()
+
+    print("Event got set")
+
+    duration = current_ddos_params["duration"]
+
+    start_time = time.time()  # Record the start time
+
+
     while True:
-        await asyncio.sleep(1)  # Update jede Sekunde
+        # await asyncio.sleep(1)  # Update jede Sekunde
+
+        elapsed_time = time.time() - start_time  # Calculate the elapsed time
+        
+        if elapsed_time >= duration:
+            break
+        
         packet_count = get_packet_count()
-        await websocket.send_json({"packet_count": packet_count})
+        packets_ = get_packets()
+        print(packet_count)
+        print(packets_)
+        #await websocket.send_json({"packet_count": packet_count})
+        if packets_ is not None:
+            await websocket.send_json({"packet": packets_})
+        
+
+
+
+
+@app.get("/ddos")
+async def start_ddos_attack(attack_type: str = Query(...), duration: int = Query(...), target: str = Query(...)):
+    """
+    This endpoint handles DDoS attack requests.
+    Expects three parameters: type, duration, and target.
+    """
+    try:
+        # # Validate parameters
+        # if type not in ["SYN flood", "UDP flood", "TCP flood"]:
+        #     raise HTTPException(status_code=400, detail="Invalid attack type specified.")
+        
+        if duration <= 0:
+            raise HTTPException(status_code=400, detail="Duration must be a positive integer.")
+        
+        protocol = PROTOCOL_MAPPING.get(attack_type.lower(), "UNKNOWN")  # Standardwert "UNKNOWN", falls nicht gefunden
+        print(f"Mapped attack type to protocol {protocol}")
+        global current_ddos_params 
+        current_ddos_params = {"protocol": protocol, "duration": duration, "target": target}
+
+        attack_message = threading.Thread(target=ddos_attack_service, args=(attack_type, duration, target))
+        attack_message.start()        
+        return JSONResponse(content={"message": f"Started DDoS attack of type {attack_type} on {target} for {duration} seconds."}, status_code=200)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error initiating DDoS attack: {str(e)}")
 
 
 @app.websocket("/ws/{endpoint}")
@@ -251,7 +276,7 @@ async def background_tasks():
     global telnet_session_started
     start_telnet_session()
     telnet_session_started = True
-    sleep(7)
+    sleep(4)
 
 
 

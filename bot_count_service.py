@@ -9,15 +9,15 @@ def start_telnet_session():
     
     """Startet eine neue Terminal-Session und führt Telnet aus."""
     telnet_process = subprocess.Popen(["gnome-terminal", "--", "bash", "-c", "telnet localhost 23; exec bash"])
-    time.sleep(2)  # Warte, bis das Terminal startet
+    time.sleep(0.5)  # Warte, bis das Terminal startet
 
     # Login über `xdotool`
     subprocess.run(["xdotool", "type", "--delay", "100", "\n"], check=True)
-    time.sleep(1)
+    time.sleep(0.5)
     subprocess.run(["xdotool", "type", "--delay", "100", "admin\n"], check=True)
-    time.sleep(1)
+    time.sleep(0.5)
     subprocess.run(["xdotool", "type", "--delay", "100", "admin\n"], check=True)
-    time.sleep(2)  # Warte auf erfolgreiche Anmeldung
+    time.sleep(1)  # Warte auf erfolgreiche Anmeldung
 
 def get_bot_count_from_all_windows():
     """Liest alle Fensternamen aus und sucht nach 'bots connected'."""
