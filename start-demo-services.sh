@@ -20,4 +20,13 @@ cd ..
 
 # Launch Backend server in a new terminal
 echo "Launching Backend server in a new terminal..."
-gnome-terminal --title="Backend Server" -- bash -c "cd $(pwd); uvicorn app:app --host 0.0.0.0 --port 8000 --reload; exec bash"
+
+gnome-terminal --title="Backend Server" -- bash -c "
+    cd $(pwd);
+    python3 -m venv venv;  # Create virtual environment
+    source venv/bin/activate;  # Activate virtual environment
+    pip install --upgrade pip;  # Upgrade pip
+    pip install fastapi
+    uvicorn app:app --host 0.0.0.0 --port 8000 --reload;
+    exec bash"
+
