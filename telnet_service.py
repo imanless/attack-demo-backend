@@ -44,7 +44,7 @@ def connect_telnet(host, username, password):
 
 def execute_command(tn, command):
     tn.write(command.encode("utf-8") + b"\n")
-    time.sleep(5)  # Give time for the command to execute
+    time.sleep(1)  # Give time for the command to execute
     output = tn.read_very_eager().decode("utf-8", errors="ignore")
     return output
 
@@ -92,6 +92,15 @@ def kill_mirai_on_bot(host):
     tn.close()
     return 0
 
+# Support rebooting bot devices instead of killing Mirai
+def reboot_bot(host):
+    tn = connect_telnet(host, USERNAME, PASSWORD)
+    if not tn:
+        return
+
+    print(f"[+] Sending reboot command to {host}")
+    output = execute_command(tn, "reboot")
+
 # def kill_mirai_on_bot(host):
 #     tn = connect_telnet(host, USERNAME, PASSWORD)
 #     if not tn:
@@ -123,13 +132,13 @@ def is_telnet_already_enabled(host):
         with telnetlib.Telnet(host, timeout=5) as tn:
             response = tn.read_until(b"login:", timeout=3)
             if b"login:" in response:
-                print(f"Telnet is enabled on {host}.")
+                print(f"[+] Telnet is enabled on {host}.")
                 return True
             else:
-                print(f"Telnet is NOT enabled on {host}.")
+                print(f"[+] Telnet is NOT enabled on {host}.")
                 return False
     except Exception as e:
-        print(f"Telnet connection failed for {host}: {e}")
+        print(f"[+] Telnet connection failed for {host}: {e}")
         return False
     
 

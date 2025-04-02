@@ -1,6 +1,50 @@
-from telnet_service import *
-from constants import (VICTIM_HOST,COMPROMISED_HOST)
 import app
+import subprocess
+import time 
+
+from telnet_service import reboot_bot
+from constants import (VICTIM_HOST, COMPROMISED_HOST)
+
+# Adapted this function to reboot devices instead of killing Mirai
+# Refactoring/Documentation needed throughout the codebase
+# Consider cases when only one device's telnet is enabled
+async def reset_demo_service():
+    print("[reset_demo] Resetting the demo")
+    
+    reboot_bot(COMPROMISED_HOST)
+    reboot_bot(VICTIM_HOST)
+    
+    print("[reset_demo] Waiting for devices to reboot...")
+    
+    #Wait until devices are reachable again
+    start_time = time.time()
+    while True:
+        ping_compromised = ping(COMPROMISED_HOST)
+        ping_victim = ping(VICTIM_HOST)
+
+        if not ping_compromised and not ping_victim:
+            print("[reset_demo] Demo has been successfully reset!")
+            return 0, 0
+        
+        time.sleep(1)
+
+
+        if time.time() - start_time > 120: # Two minutes timeout
+            print("[reset_demo] Timeout: device not reachable")
+            return 1, 1
+
+
+
+def ping(host):
+    result = subprocess.run(
+            ["ping", "-c", "1", host],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+    return result.returncode
+
+"""
 async def reset_demo_service():
     
     print("[reset_demo] Resetting the demo")
@@ -38,3 +82,4 @@ async def reset_demo_service():
     #     print("[reset_demo] kill loader on local machine")
 
     #     time.sleep(1)
+"""

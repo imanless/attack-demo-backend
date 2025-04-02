@@ -62,9 +62,10 @@ async def ub_ip(ip: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error unblocking IP: {str(e)}")
 
-from bot_count_service import start_telnet_session, get_bot_count_from_all_windows
+#from bot_count_service import start_telnet_session, get_bot_count_from_all_windows
 from time import sleep
 
+"""
 telnet_session_started = False
 @app.get("/bot_count")
 async def count_connected_bots():
@@ -79,6 +80,7 @@ async def count_connected_bots():
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving bot count: {str(e)}")
+"""
 
 current_ddos_params = {}
 
@@ -246,6 +248,7 @@ async def reset_demo():
     if rs1 == 1 and rs2 == 0:
         return {"message": "Mirai on 10.0.0.6 was not deleted"}
 
+    """
     # If rs2 is 1, meaning Mirai on .23 was not killed
     if rs1 == 0 and rs2 == 1:
         return {"message": "Mirai on 10.0.0.23 was not deleted"}
@@ -253,6 +256,15 @@ async def reset_demo():
     # If both rs1 and rs2 are 1, meaning nothing was killed
     if rs1 == 1 and rs2 == 1:
         return {"message": "Mirai on both 10.0.0.6 and 10.0.0.23 were not deleted"}
+
+    # If both rs1 and rs2 are 1, meaning nothing was killed
+    if rs1 == 1 and rs2 == 1:
+        return {"message": "Mirai on both 10.0.0.6 and 10.0.0.23 were not deleted"}
+    """
+
+    # Bot devices did not reconnect to the network
+    if rs1 == 1 and rs2 == 1:
+        return {"message": "Connection to rebooted devices timed out"}
 
     # Default failure response
     return {"message": "Demo system reset failed"}, 500
@@ -273,9 +285,9 @@ async def background_tasks():
     for endpoint in clients_by_endpoint:
         asyncio.create_task(process_output_queue(endpoint))
 
-    global telnet_session_started
-    start_telnet_session()
-    telnet_session_started = True
+    #global telnet_session_started
+    #start_telnet_session()
+    #telnet_session_started = True
     sleep(4)
 
 
