@@ -165,6 +165,7 @@ async def count_packets(websocket: WebSocket):
 
 
     while True:
+        await asyncio.sleep(0.1)  # Update every 0.1 seconds not to flood UI
         # await asyncio.sleep(1)  # Update jede Sekunde
 
         elapsed_time = time.time() - start_time  # Calculate the elapsed time
@@ -172,9 +173,9 @@ async def count_packets(websocket: WebSocket):
         if elapsed_time >= duration:
             break
         
-        packet_count = get_packet_count()
+        #packet_count = get_packet_count()
         packets_ = get_packets()
-        print(packet_count)
+        #print(packet_count)
         print(packets_)
         #await websocket.send_json({"packet_count": packet_count})
         if packets_ is not None:
