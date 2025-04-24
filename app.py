@@ -358,6 +358,7 @@ async def get():
             <br><br>
 
             <button onclick="botCount()">Count connected bots</button>
+            <p id="botCountDisplay"></p>
 
             <!-- Script for HTTP request to start DDoS -->
             <script>
@@ -393,7 +394,8 @@ async def get():
                         .then(response => response.json())
                         .then(data => {
                             console.log("Connected Bots", data);
-                            alert(data.message);  // Show the confirmation message to the user
+                            // alert(data.message);  // Show the confirmation message to the user
+                            document.getElementById("botCountDisplay").innerText = `Connected Bots: ${data.message}`;
                         })
                         .catch(error => {
                             console.error("Error starting DDoS attack:", error);
