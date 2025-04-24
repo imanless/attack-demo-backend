@@ -94,6 +94,7 @@ def kill_mirai_on_bot(host):
 
 # Support rebooting bot devices instead of killing Mirai
 def reboot_bot(host):
+    enable_telnet(host)
     tn = connect_telnet(host, USERNAME, PASSWORD)
     if not tn:
         return
