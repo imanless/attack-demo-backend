@@ -4,10 +4,16 @@ import re
 
 telnet_process = None
 
+
+def is_telnet_session_active():
+    """Checks if a Telnet window with 'Bots Connected' is open."""
+    result = subprocess.run(["wmctrl", "-l"], capture_output=True, text=True)
+    windows = [window for window in result.stdout.split("\n") if window.strip()]
+    return any("bots connected" in window.lower() for window in windows)
+
 def start_telnet_session():
     global telnet_process
-    
-    """Startet eine neue Terminal-Session und führt Telnet aus."""
+    """Start a new terminal session and connect via telnet"""
     telnet_process = subprocess.Popen(["gnome-terminal", "--", "bash", "-c", "telnet localhost 23; exec bash"])
     time.sleep(0.5)  # Warte, bis das Terminal startet
 

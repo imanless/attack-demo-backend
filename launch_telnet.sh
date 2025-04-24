@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# Open Telnet in a new terminal window
 gnome-terminal --title="CNC Bot Count" -- bash -c 'telnet localhost 23; exec bash' &
+sleep 1
 
-# Give Telnet a moment to start
-sleep 1.5
+xdotool key Return
 
-# Send login via keyboard
-xdotool type --delay 100 '\n'
-sleep 0.5
-xdotool type --delay 100 'admin\n'
-sleep 0.5
-xdotool type --delay 100 'admin\n'
+xdotool type 'admin'
+xdotool key Return
+
+xdotool type 'admin'
+xdotool key Return

