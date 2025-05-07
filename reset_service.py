@@ -1,8 +1,8 @@
 import app
 import subprocess
-import time 
+import time
 
-from telnet_service import reboot_bot
+from telnet_service import reboot_bot,kill_mirai_on_bot
 from constants import (VICTIM_HOST, COMPROMISED_HOST)
 
 # Adapted this function to reboot devices instead of killing Mirai
@@ -10,9 +10,11 @@ from constants import (VICTIM_HOST, COMPROMISED_HOST)
 # Consider cases when only one device's telnet is enabled
 async def reset_demo_service():
     print("[reset_demo] Resetting the demo")
-    
-    reboot_bot(COMPROMISED_HOST)
-    reboot_bot(VICTIM_HOST)
+    kill_mirai_on_bot(COMPROMISED_HOST)
+    kill_mirai_on_bot(VICTIM_HOST)
+
+    # reboot_bot(COMPROMISED_HOST)
+    # reboot_bot(VICTIM_HOST)
     
     print("[reset_demo] Waiting for devices to reboot...")
     
