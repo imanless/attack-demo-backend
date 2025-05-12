@@ -362,13 +362,82 @@ async def get():
             <button onclick="botCount()">Count connected bots</button>
             <p id="botCountDisplay"></p>
 
+            <div id="overlay">
+                <div class="spinner"></div>
+                <p id="loadingMessage" style="display: none;"></p>
+            </div>
+
+            <style>
+                #overlay {
+                    position: fixed;
+                    display: none;
+                    width: 100%;
+                    height: 100%;
+                    top: 0;
+                    left: 0;
+                    background-color: rgba(255, 255, 255, 0.8);
+                    z-index: 1000;
+                    text-align: center;
+                    padding-top: 200px;
+                }
+
+                .spinner {
+                    border: 8px solid #f3f3f3;
+                    border-top: 8px solid #3498db;
+                    border-radius: 50%;
+                    width: 60px;
+                    height: 60px;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto;
+                }
+
+                @keyframes spin {
+                    0% {
+                    transform: rotate(0deg);
+                    }
+                    100% {
+                    transform: rotate(360deg);
+                    }
+                }
+            </style>
+
             <!-- Script for HTTP request to start DDoS -->
             <script>
+
+
+                function showOverlay(message = "Loading... Please wait.") {
+                    document.getElementById("loadingMessage").innerText = message;
+                    document.getElementById("loadingMessage").style.display = "block";
+                    document.getElementById("overlay").style.display = "block";
+                }
+
+                function hideOverlay() {
+                    document.getElementById("overlay").style.display = "none";
+                    document.getElementById("loadingMessage").style.display = "none";
+                }
+
+
                 function connect(endpoint) {
                     if (endpoint === 'scanning') {
+                        showOverlay("Scanning...");
                         console.log(`Selected endpoint: /${endpoint}`);
                         const ws = new WebSocket(`ws://localhost:8000/ws/${endpoint}`);
+                        ws.onmessage = function (event) {
+                        try {
+                            const msg = JSON.parse(event.data);
+                            if (msg.username && msg.password && msg.ip) {
+                            hideOverlay();
+                            alert(
+                                `Device Found:\nIP: ${msg.ip}\nUsername: ${msg.username}\nPassword: ${msg.password}`
+                            );
+                            ws.close(); // Optional: close WebSocket after success
+                            }
+                        } catch (e) {
+                            console.log("Non-JSON message received:", event.data);
+                        }
+                        };
                     } else if (endpoint === 'inject') {
+                        showOverlay("Injecting");
                         const username = prompt("Enter username:");
                         const password = prompt("Enter password:");
                         const ip = prompt("Enter target IP:");
@@ -379,10 +448,12 @@ async def get():
                             .then(response => response.json())
                             .then(data => {
                                 console.log("Injection started:", data);
+                                hideOverlay()
                                 alert(data.message);  // Show the confirmation message to the user
                             })
                             .catch(error => {
                                 console.error("Error starting injection:", error);
+                                hideOverlay()
                                 alert("Failed to start injection. Check the console for errors.");
                             });
                     }
@@ -412,16 +483,19 @@ async def get():
 
                 // Reset Demo functionality (POST request)
                 function resetDemo() {
+                    showOverlay("Resetting Demo")
                     fetch('/reset_demo', {
                         method: 'POST',
                     })
                     .then(response => response.json())
                     .then(data => {
                         console.log("Demo Reset:", data);
+                        hideOverlay()
                         alert(data.message);  // Show the confirmation message to the user
                     })
                     .catch(error => {
                         console.error("Error resetting demo:", error);
+                        hideOverlay()
                         alert("Failed to reset the demo. Check the console for errors.");
                     });
                 }
