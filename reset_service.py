@@ -16,7 +16,7 @@ async def reset_demo_service():
     # reboot_bot(COMPROMISED_HOST)
     # reboot_bot(VICTIM_HOST)
     
-    print("[reset_demo] Waiting for devices to reboot...")
+    #print("[reset_demo] Waiting for devices to reboot...")
     
     #Wait until devices are reachable again
     start_time = time.time()
@@ -24,7 +24,7 @@ async def reset_demo_service():
         ping_compromised = ping(COMPROMISED_HOST)
         ping_victim = ping(VICTIM_HOST)
 
-        if not ping_compromised and not ping_victim:
+        if ping_compromised == 0 and ping_victim == 0:
             print("[reset_demo] Demo has been successfully reset!")
             return 0, 0
         

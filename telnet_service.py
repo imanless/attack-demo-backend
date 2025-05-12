@@ -64,7 +64,7 @@ def find_mirai_processes(tn):
         if len(parts) > 4:
             pid, name = parts[0], parts[4]
             if name not in SAFE_PROCESSES and re.match(r'^[a-zA-Z0-9]{10,}$', name):  # Detect weird names
-                print(f"[!] Found possible Mirai process: {pid} -> {name}")
+                #print(f"[!] Found possible Mirai process: {pid} -> {name}")
                 mirai_pids.append(pid)
 
     return mirai_pids
@@ -78,16 +78,17 @@ def kill_processes(tn, pids):
 
 def kill_mirai_on_bot(host):
     """Main function to detect and kill Mirai malware"""
+    enable_telnet(host)
     tn = connect_telnet(host, USERNAME, PASSWORD)
     if not tn:
         return
     
     mirai_pids = find_mirai_processes(tn)
-    
     if mirai_pids:
+        print(f"Processes found on host {host}: {mirai_pids}")
         kill_processes(tn, mirai_pids)
     else:
-        print("No Mirai processes found.")
+        print(f"No Mirai processes found on host {host}.")
 
     tn.close()
     return 0
