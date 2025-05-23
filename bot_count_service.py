@@ -14,7 +14,7 @@ def is_telnet_session_active():
 def start_telnet_session():
     global telnet_process
     """Start a new terminal session and connect via telnet"""
-    telnet_process = subprocess.Popen(["gnome-terminal", "--", "bash", "-c", "telnet localhost 23; exec bash"])
+    telnet_process = subprocess.Popen(["gnome-terminal","--title=CNC Bot Count","--", "bash", "-c", "telnet localhost 23; exec bash"])
     time.sleep(0.5)  # Warte, bis das Terminal startet
 
     # Login über `xdotool`
