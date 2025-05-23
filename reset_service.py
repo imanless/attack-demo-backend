@@ -4,12 +4,19 @@ import time
 
 from telnet_service import reboot_bot,kill_mirai_on_bot
 from constants import (VICTIM_HOST, COMPROMISED_HOST)
+from bot_count_service import get_bot_count_from_all_windows
 
 # Adapted this function to reboot devices instead of killing Mirai
 # Refactoring/Documentation needed throughout the codebase
 # Consider cases when only one device's telnet is enabled
 async def reset_demo_service():
     print("[reset_demo] Resetting the demo")
+    bot_count = get_bot_count_from_all_windows()
+    if bot_count == 0:
+        print("No bots connected")
+        return 0, 0
+    print(f"[reset_demo] Detected {bot_count} bot(s). Proceeding to kill Mirai.")
+
     kill_mirai_on_bot(COMPROMISED_HOST)
     kill_mirai_on_bot(VICTIM_HOST)
 

@@ -23,3 +23,5 @@ echo "Launching Backend server in a new terminal..."
 
 gnome-terminal --title="Backend Server" -- bash -c "uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
 
+#Launch Bot Count Window in a new terminal
+python3 -c "from bot_count_service import start_telnet_session; start_telnet_session()"

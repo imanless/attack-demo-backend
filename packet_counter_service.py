@@ -49,6 +49,18 @@ def start_sniffing(protocol, destination,tcp_flag):
     """Startet das Sniffing, wenn es nicht bereits läuft"""
     global sniffing_active
 
+    # if not sniffing_active:
+    #     sniffing_active = True
+    #     bpf_filter = f"{protocol.lower()} and (src {SRC1} or src {SRC2} or src {SRC3}) and dst {destination}"
+    #     print(f"Starte Paketüberwachung auf {INTERFACE} für {protocol} von {SRC1}, {SRC2}, {SRC3} zu {destination}...")
+    #     #sniff(iface=INTERFACE, filter=bpf_filter, prn=packet_callback, store=0)
+    #     sniff(
+    #         iface=INTERFACE, 
+    #         filter=bpf_filter, 
+    #         prn=lambda pkt: packet_callback(pkt, protocol, destination, tcp_flag), 
+    #         store=0
+    #     )
+
     if not sniffing_active:
         sniffing_active = True
         bpf_filter = f"{protocol.lower()} and (src {SRC1} or src {SRC2}) and dst {destination}"
