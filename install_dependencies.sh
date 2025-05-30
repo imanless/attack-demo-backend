@@ -5,6 +5,9 @@ cd "$DIR" || { echo "Failed to change to script directory"; exit 1; }
 
 echo "[INFO] Checking for system dependencies..."
 
+echo "confirming if packages are up to date"
+sudo apt-get update
+
 if ! command -v python3 &> /dev/null; then
     echo "[INFO] Python3 is not installed. Installing..."
     sudo apt update && sudo apt install -y python3 || { echo "Failed to install Python3"; exit 1; }
