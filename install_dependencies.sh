@@ -73,5 +73,80 @@ else
     echo "[INFO] All required Python packages are already installed in venv"
 fi
 
+
+# Check and modify GDM display session configuration using XDG_SESSION_TYPE
+echo "[INFO] Checking current display server session"
+if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+    echo "[INFO] Wayland session detected. Updating GDM configuration to disable Wayland..."
+    GDM_CONF="/etc/gdm3/custom.conf"
+    if [ -f "$GDM_CONF" ]; then
+        sudo sed -i 's/^#WaylandEnable=false/WaylandEnable=false/' "$GDM_CONF"
+        sudo sed -i '/^WaylandEnable=/s/.*/WaylandEnable=false/' "$GDM_CONF"
+        echo -e "\e[1;33m[IMPORTANT]\e[0m Wayland has been disabled in GDM configuration."
+        echo -e "\e[1;31m[NOTICE]\e[0m You must \e[1mREBOOT\e[0m your system now to apply display changes!"
+    else
+        echo "[WARNING] GDM configuration file not found at $GDM_CONF. Cannot disable Wayland automatically."
+    fi
+else
+    echo "[INFO] X11 session is already in use - no need to reboot"
+fi
+
 echo "[DEBUG] Active Python: $(which python3)"
 echo "[DEBUG] Venv: $VIRTUAL_ENV"
+
+# Ensure hostname mappings exist in /etc/hosts
+echo "[INFO] Ensuring hostname mappings exist in /etc/hosts..."
+
+HOSTS_FILE="/etc/hosts"
+CNC_ENTRY="10.10.10.5 cnc.mirai.local"
+REPORT_ENTRY="10.10.10.5 report.mirai.local"
+
+if ! grep -q "cnc.mirai.local" "$HOSTS_FILE"; then
+    echo "[INFO] Adding cnc.mirai.local hostname to hosts file..."
+    echo "$CNC_ENTRY" | sudo tee -a "$HOSTS_FILE" > /dev/null
+else
+    echo "[INFO] CNC hostname already present in hosts file"
+fi
+
+if ! grep -q "report.mirai.local" "$HOSTS_FILE"; then
+    echo "[INFO] Adding cnc.mirai.local hostname to hosts file..."
+    echo "$REPORT_ENTRY" | sudo tee -a "$HOSTS_FILE" > /dev/null
+else
+    echo "[INFO] Report hostname already present in hosts file"
+fi
+
+echo -e "\n[INFO] Current contents of /etc/hosts:"
+echo "----------------------------------------"
+cat /etc/hosts
+echo "----------------------------------------"
+
+# Setup sudoers entry for the CNC script
+CNC_SCRIPT="$DIR/ReadMine-Mirai-Demo-Files/cnc"
+CNC_SUDOERS_LINE="test ALL=(ALL) NOPASSWD: $CNC_SCRIPT"
+SUDOERS_FILE="/etc/sudoers.d/cnc"
+if [ ! -f "$SUDOERS_FILE" ] || ! grep -Fxq "$CNC_SUDOERS_LINE" "$SUDOERS_FILE"; then
+    echo "[INFO] Adding sudoers entry for CNC script..."
+    echo "$CNC_SUDOERS_LINE" | sudo tee "$SUDOERS_FILE" > /dev/null
+else
+    echo "[INFO] Sudoers entry for CNC script already exists"
+fi
+
+echo "[INFO] All dependencies have been installed."
+echo "[INFO] Now setting up database and apache server"
+
+# Run Mirai database setup only if not already done
+if [ ! -f "./mirai_db_setup_done" ]; then
+    echo "[INFO] Setting up Mirai database..."
+    ./cnc_db_setup.sh && touch "./mirai_db_setup_done"
+else
+    echo "[INFO] Mirai database already set up. Skipping..."
+fi
+
+# Run Apache setup only if not already done
+if [ ! -f "./apache_setup_done" ]; then
+    echo "[INFO] Installing Apache server with Mirai binaries..."
+    ./install_apache_web_server.sh && touch "./apache_setup_done"
+else
+    echo "[INFO] Apache setup already completed. Skipping..."
+fi
+sudo systemctl daemon-reload

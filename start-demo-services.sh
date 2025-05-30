@@ -6,22 +6,6 @@ cd "$DIR" || { echo "Failed to change to script directory"; exit 1; }
 echo "[INFO] Activating virtual environment..."
 source venv/bin/activate || { echo "Virtual environment not found. Please run install-dependencies.sh first."; exit 1; }
 
-# Run Mirai database setup only if not already done
-if [ ! -f "./mirai_db_setup_done" ]; then
-    echo "[INFO] Setting up Mirai database..."
-    ./cnc_db_setup.sh && touch "./mirai_db_setup_done"
-else
-    echo "[INFO] Mirai database already set up. Skipping..."
-fi
-
-# Run Apache setup only if not already done
-if [ ! -f "./apache_setup_done" ]; then
-    echo "[INFO] Installing Apache server with Mirai binaries..."
-    ./install_apache_web_server.sh && touch "./apache_setup_done"
-else
-    echo "[INFO] Apache setup already completed. Skipping..."
-fi
-
 # Start Apache2
 echo "Starting Apache2 service..."
 sudo service apache2 start || { echo "Apache2 service failed to start"; exit 1; }
